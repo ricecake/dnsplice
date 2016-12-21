@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc dnsplice top level supervisor.
+%% @doc dnsplice worker supervisor.
 %% @end
 %%%-------------------------------------------------------------------
 
--module(dnsplice_sup).
+-module(dnsplice_worker_sup).
 
 -behaviour(supervisor).
 
@@ -31,9 +31,8 @@ start_link() ->
 
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-	{ok, {#{}, [
-		?CHILD(dnsplice_worker_sup, supervisor),
-		?CHILD(dnsplice_listener, worker)
+	{ok, {#{ strategy => simple_one_for_one }, [
+		?CHILD(dnsplice_worker, worker)
 	]}}.
 
 %%====================================================================
