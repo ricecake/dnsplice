@@ -45,11 +45,13 @@ init({Packet, Sender}) ->
 	{ok, SocketB} = gen_udp:open(0, [binary]),
 	ok = gen_udp:send(SocketB, {8, 8, 4, 4}, 53, Packet),
 	State = #{
+		packet => Packet,
 		sender => Sender,
 		done   => false,
 		sockA  => SocketA,
 		sockB  => SocketB
 	},
+	erlang:send_after(timer:seconds(2), self(), timeout),
 	{ok, State}.
 
 handle_call(_Request, _From, State) ->
@@ -58,10 +60,11 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info({udp, _Socket, _IP, _InPortNo, Packet}, #{ done := Done, sender := Sender} = State) ->
-	io:format("~p~n", [inet_dns:decode(Packet)]),
+handle_info({udp, _Socket, _IP, _InPortNo, ReplyPacket}, #{ done := Done, sender := Sender, packet := Packet } = State) ->
+	{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
+	io:format("~p~n", [build_subdomains(Domain)]),
 	ok = if
-		not Done -> dnsplice_listener:send_reply(Packet, Sender);
+		not Done -> dnsplice_listener:send_reply(ReplyPacket, Sender);
 		Done -> ok
 	end,
 	{noreply, State};
@@ -78,7 +81,8 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-build_subdomains(Domain) ->
+build_subdomains(Domain) when is_list(Domain)-> build_subdomains(list_to_binary(Domain));
+build_subdomains(Domain) when is_binary(Domain)->
 	Labels = binary:split(Domain, <<".">>, [global]),
 	do_subdomain_build(lists:reverse(Labels), []).
 

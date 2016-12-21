@@ -19,7 +19,7 @@
 -define(SERVER, ?MODULE).
 
 %% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), #{ id => I, type => Type, start => {I, start_link, []} }).
+-define(CHILD(I, Type), #{ id => I, type => Type, restart => temporary, start => {I, start_link, []} }).
 
 %%====================================================================
 %% API functions
