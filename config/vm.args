@@ -1,0 +1,6 @@
+-sname dnsplice
+
+-setcookie dnsplice_cookie
+
++K true
++A30
