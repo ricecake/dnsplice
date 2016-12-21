@@ -7,7 +7,8 @@
 %% ------------------------------------------------------------------
 
 -export([
-	start_link/0
+	start_link/1,
+	handle/2
 ]).
 
 %% ------------------------------------------------------------------
@@ -27,14 +28,18 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+start_link(Args) ->
+	gen_server:start_link(?MODULE, Args, []).
+
+handle(Packet, Sender) ->
+	dnsplice_worker_sup:start_worker(Packet, Sender).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
 init(Args) ->
+	io:format("~p~n", [Args]),
 	{ok, Args}.
 
 handle_call(_Request, _From, State) ->

@@ -28,14 +28,15 @@
 %% ------------------------------------------------------------------
 
 start_link() ->
-	gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+	gen_server:start_link({local, ?SERVER}, ?MODULE, #{}, []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
 init(Args) ->
-	{ok, Args}.
+	{ok, Socket} = gen_udp:open(5300, [binary]),
+	{ok, Args#{ socket => Socket }}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
@@ -43,7 +44,12 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(_Info, State) ->
+handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) ->
+%	io:format("~p~n", [inet_dns:decode(Packet)]),
+	{ok, _} = dnsplice_worker:handle(Packet, {IP, InPortNo}),
+	{noreply, State};
+handle_info(Info, State) ->
+	io:format("Unhandled: ~p~n", [Info]),
 	{noreply, State}.
 
 terminate(_Reason, _State) ->
