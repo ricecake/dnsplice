@@ -78,3 +78,13 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
+build_subdomains(Domain) ->
+	Labels = binary:split(Domain, <<".">>, [global]),
+	do_subdomain_build(lists:reverse(Labels), []).
+
+do_subdomain_build([], Acc) -> Acc;
+do_subdomain_build([Chunk |Rest], []) ->
+	do_subdomain_build(Rest, [Chunk]);
+do_subdomain_build([Chunk |Rest], [Last |_] = Acc) ->
+	do_subdomain_build(Rest, [<<Chunk/binary, $., Last/binary>> |Acc]).
+
