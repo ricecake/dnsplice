@@ -1,16 +1,15 @@
-{application, dnsplice,
- [{description, "An OTP application"},
-  {vsn, "0.1.0"},
-  {registered, []},
-  {mod, { dnsplice_app, []}},
-  {applications,
-   [kernel,
-    stdlib
-   ]},
-  {env,[]},
-  {modules, []},
-
-  {maintainers, []},
-  {licenses, []},
-  {links, []}
- ]}.
+{application, dnsplice, [
+	{description, "Conditionally Routes DNS Packets"},
+	{vsn, "0.1.0"},
+	{registered, []},
+	{mod, { dnsplice_app, []}},
+	{applications, [
+		kernel,
+		stdlib
+	]},
+	{env,[]},
+	{modules, []},
+	{maintainers, []},
+	{licenses, []},
+	{links, []}
+]}.
