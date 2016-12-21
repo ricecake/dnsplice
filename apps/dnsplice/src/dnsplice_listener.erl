@@ -7,7 +7,8 @@
 %% ------------------------------------------------------------------
 
 -export([
-	start_link/0
+	start_link/0,
+	send_reply/2
 ]).
 
 %% ------------------------------------------------------------------
@@ -30,6 +31,9 @@
 start_link() ->
 	gen_server:start_link({local, ?SERVER}, ?MODULE, #{}, []).
 
+send_reply(Packet, {IP, Port}) ->
+	gen_server:cast(?SERVER, {reply, IP, Port, Packet}).
+
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -41,6 +45,9 @@ init(Args) ->
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
+handle_cast({reply, IP, Port, Packet}, #{ socket := Socket } = State) ->
+	ok = gen_udp:send(Socket, IP, Port, Packet),
+	{noreply, State};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 

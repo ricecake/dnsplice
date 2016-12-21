@@ -1,6 +1,7 @@
 -module(dnsplice_worker).
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
+-include_lib("kernel/src/inet_dns.hrl").
 
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -38,9 +39,18 @@ handle(Packet, Sender) ->
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init(Args) ->
-	io:format("~p~n", [Args]),
-	{ok, Args}.
+init({Packet, Sender}) ->
+	{ok, SocketA} = gen_udp:open(0, [binary]),
+	ok = gen_udp:send(SocketA, {8, 8, 8, 8}, 53, Packet),
+	{ok, SocketB} = gen_udp:open(0, [binary]),
+	ok = gen_udp:send(SocketB, {8, 8, 4, 4}, 53, Packet),
+	State = #{
+		sender => Sender,
+		done   => false,
+		sockA  => SocketA,
+		sockB  => SocketB
+	},
+	{ok, State}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
@@ -48,6 +58,13 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
+handle_info({udp, _Socket, _IP, _InPortNo, Packet}, #{ done := Done, sender := Sender} = State) ->
+	io:format("~p~n", [inet_dns:decode(Packet)]),
+	ok = if
+		not Done -> dnsplice_listener:send_reply(Packet, Sender);
+		Done -> ok
+	end,
+	{noreply, State};
 handle_info(_Info, State) ->
 	{noreply, State}.
 
