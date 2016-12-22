@@ -45,36 +45,50 @@ init({Packet, Sender}) ->
 	{ok, SocketB} = gen_udp:open(0, [binary]),
 	ok = gen_udp:send(SocketB, {8, 8, 4, 4}, 53, Packet),
 	State = #{
+		start  => erlang:monotonic_time(),
 		packet => Packet,
 		sender => Sender,
 		done => false,
-        sockets => #{
-            SocketA => sockA,
-            SocketB => sockB
-        },
-        replies => #{}
+		replies => #{},
+		sockets => #{
+			SocketA => sockA,
+			SocketB => sockB
+		}
 	},
-	erlang:send_after(timer:seconds(2), self(), timeout),
+	gen_server:cast(self(), determine_route),
+	erlang:send_after(timer:seconds(1), self(), timeout),
 	{ok, State}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
+handle_cast(determine_route, #{ packet := Packet } = State) ->
+	{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
+	io:format("~p~n", [build_subdomains(Domain)]),
+	{noreply, State};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info({udp, _Socket, _IP, _InPortNo, ReplyPacket}, #{ done := Done, sender := Sender, packet := Packet } = State) ->
-	{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-	io:format("~p~n", [build_subdomains(Domain)]),
+handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ done := Done, sender := Sender, replies := Replies, sockets := Sockets } = State) ->
 	ok = if
 		not Done -> dnsplice_listener:send_reply(ReplyPacket, Sender);
 		Done -> ok
 	end,
-	{noreply, State};
+	#{ Socket := SockName } = Sockets,
+	NewReplies = Replies#{ SockName => ReplyPacket },
+	RemainingReplies = maps:size(Sockets) - maps:size(NewReplies),
+	NewState = State#{ done := true, replies := NewReplies },
+	if
+		RemainingReplies >  0 -> {noreply, NewState};
+		RemainingReplies =< 0 -> {stop, normal, NewState}
+	end;
+handle_info(timeout, State) ->
+	{stop, normal, State};
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+	io:format("~p~n", [State#{ stop => erlang:monotonic_time() }]),
 	ok.
 
 code_change(_OldVsn, State, _Extra) ->
