@@ -47,9 +47,12 @@ init({Packet, Sender}) ->
 	State = #{
 		packet => Packet,
 		sender => Sender,
-		done   => false,
-		sockA  => SocketA,
-		sockB  => SocketB
+		done => false,
+        sockets => #{
+            SocketA => sockA,
+            SocketB => sockB
+        },
+        replies => #{}
 	},
 	erlang:send_after(timer:seconds(2), self(), timeout),
 	{ok, State}.
