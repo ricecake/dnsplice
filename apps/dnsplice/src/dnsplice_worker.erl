@@ -40,23 +40,17 @@ handle(Packet, Sender) ->
 %% ------------------------------------------------------------------
 
 init({Packet, Sender}) ->
-	{ok, SocketA} = gen_udp:open(0, [binary]),
-	ok = gen_udp:send(SocketA, {8, 8, 8, 8}, 53, Packet),
-	{ok, SocketB} = gen_udp:open(0, [binary]),
-	ok = gen_udp:send(SocketB, {8, 8, 4, 4}, 53, Packet),
+	{ok, Servers} = application:get_env(servers),
+	Sockets = [ forward_packet(Backend, Packet) || Backend <- Servers ],
 	State = #{
-		start  => erlang:monotonic_time(),
 		packet => Packet,
 		sender => Sender,
-		done => false,
 		replies => #{},
-		sockets => #{
-			SocketA => sockA,
-			SocketB => sockB
-		}
+		sockets => maps:from_list(Sockets)
 	},
 	gen_server:cast(self(), determine_route),
-	erlang:send_after(timer:seconds(1), self(), timeout),
+	Timeout = application:get_env(dnsplice, packet_timeout, timer:seconds(1)),
+	erlang:send_after(Timeout, self(), timeout),
 	{ok, State}.
 
 handle_call(_Request, _From, State) ->
@@ -64,20 +58,22 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(determine_route, #{ packet := Packet } = State) ->
 	{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-	io:format("~p~n", [build_subdomains(Domain)]),
-	{noreply, State};
+	_ = build_subdomains(Domain),
+	{ok, Choice} = application:get_env(default_backend),
+	{noreply, State#{ route => Choice }};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ done := Done, sender := Sender, replies := Replies, sockets := Sockets } = State) ->
-	ok = if
-		not Done -> dnsplice_listener:send_reply(ReplyPacket, Sender);
-		Done -> ok
-	end,
+handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ route := Choice, sender := Sender, replies := Replies, sockets := Sockets } = State) ->
 	#{ Socket := SockName } = Sockets,
+	Done = Choice =:= SockName,
+	ok = if
+		not Done -> ok;
+		Done -> dnsplice_listener:send_reply(ReplyPacket, Sender)
+	end,
 	NewReplies = Replies#{ SockName => ReplyPacket },
 	RemainingReplies = maps:size(Sockets) - maps:size(NewReplies),
-	NewState = State#{ done := true, replies := NewReplies },
+	NewState = State#{ replies := NewReplies },
 	if
 		RemainingReplies >  0 -> {noreply, NewState};
 		RemainingReplies =< 0 -> {stop, normal, NewState}
@@ -87,8 +83,8 @@ handle_info(timeout, State) ->
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, State) ->
-	io:format("~p~n", [State#{ stop => erlang:monotonic_time() }]),
+terminate(_Reason, _State) ->
+	%io:format("~p~n", [State]),
 	ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -109,3 +105,7 @@ do_subdomain_build([Chunk |Rest], []) ->
 do_subdomain_build([Chunk |Rest], [Last |_] = Acc) ->
 	do_subdomain_build(Rest, [<<Chunk/binary, $., Last/binary>> |Acc]).
 
+forward_packet({Label, Address}, Packet) ->
+	{ok, Socket} = gen_udp:open(0, [binary]),
+	ok = gen_udp:send(Socket, Address, 53, Packet),
+	{Socket, Label}.

@@ -52,7 +52,6 @@ handle_cast(_Msg, State) ->
 	{noreply, State}.
 
 handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) ->
-%	io:format("~p~n", [inet_dns:decode(Packet)]),
 	{ok, _} = dnsplice_worker:handle(Packet, {IP, InPortNo}),
 	{noreply, State};
 handle_info(Info, State) ->
@@ -68,4 +67,3 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
-
