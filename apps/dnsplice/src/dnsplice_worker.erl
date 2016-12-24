@@ -57,9 +57,14 @@ handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
 handle_cast(determine_route, #{ packet := Packet } = State) ->
-	{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-	_ = build_subdomains(Domain),
-	{ok, Choice} = application:get_env(default_backend),
+	Choice = try
+		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
+		_ = build_subdomains(Domain)
+	catch
+		_:_ -> 
+			{ok, Default} = application:get_env(default_backend),
+			Default
+	end,
 	{noreply, State#{ route => Choice }};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
