@@ -39,7 +39,8 @@ send_reply(Packet, {IP, Port}) ->
 %% ------------------------------------------------------------------
 
 init(Args) ->
-	{ok, Socket} = gen_udp:open(5300, [binary]),
+	Opts = application:get_env(dnsplice, listen_opts, []),
+	{ok, Socket} = gen_udp:open(5300, [binary |Opts]),
 	{ok, Args#{ socket => Socket }}.
 
 handle_call(_Request, _From, State) ->

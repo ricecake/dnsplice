@@ -2,6 +2,7 @@
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 -include_lib("kernel/src/inet_dns.hrl").
+-include_lib("dnsplice/src/records.hrl").
 
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -57,13 +58,20 @@ handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
 handle_cast(determine_route, #{ packet := Packet } = State) ->
+	{ok, Default} = application:get_env(default_backend),
 	Choice = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-		_ = build_subdomains(Domain)
+		DomainNames = build_subdomains(Domain),
+		mnesia:activity(async_dirty, fun
+			FindRoute([]) -> Default;
+			FindRoute([Next |Rest]) ->
+				case mnesia:read(route, Next) of
+					[] -> FindRoute(Rest);
+					[#route{ backend = Backend }] -> Backend
+				end
+		end, [DomainNames])
 	catch
-		_:_ -> 
-			{ok, Default} = application:get_env(default_backend),
-			Default
+		_:_ -> Default
 	end,
 	{noreply, State#{ route => Choice }};
 handle_cast(_Msg, State) ->

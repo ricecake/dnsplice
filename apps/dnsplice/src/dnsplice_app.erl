@@ -6,6 +6,7 @@
 -module(dnsplice_app).
 
 -behaviour(application).
+-include_lib("dnsplice/src/records.hrl").
 
 %% Application callbacks
 -export([start/2, stop/1]).
@@ -18,6 +19,7 @@ start(_StartType, _StartArgs) ->
 	ok = application:set_env(dnsplice, servers, [
 		normalize_backend(Entry) || Entry <- application:get_env(dnsplice, backends, [])
 	]),
+	ok = setup_mnesia(),
 	dnsplice_sup:start_link().
 
 %%--------------------------------------------------------------------
@@ -33,3 +35,20 @@ normalize_backend({Label, IP}) when is_list(IP) ->
 	{Label, IpTuple};
 normalize_backend({Label, IP}) when is_tuple(IP) ->
 	{Label, IP}.
+
+setup_mnesia() ->
+	Nodes = application:get_env(dnsplice, peers, [node()]),
+	mnesia:change_config(extra_db_nodes, Nodes),
+	mnesia:change_table_copy_type(schema, node(), disc_copies),
+	case mnesia:system_info(tables) -- [schema] of
+		[] ->
+			{atomic, ok} = mnesia:create_table(route, [
+				{disc_copies, [node()]},
+				{attributes, record_info(fields, route)}
+			]),
+			ok;
+		SystemTables ->
+			[mnesia:add_table_copy(Table, node(), disc_copies) || Table <- SystemTables],
+			ok = mnesia:wait_for_tables([schema |SystemTables], 10000)
+	end,
+	ok.
