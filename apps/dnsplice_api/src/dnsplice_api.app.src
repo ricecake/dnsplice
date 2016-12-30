@@ -1,0 +1,18 @@
+{application, dnsplice_api,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { dnsplice_api_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    jsx,
+    cowboy
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.
