@@ -39,7 +39,6 @@ cowboy_start() ->
 	Dispatch      = cowboy_router:compile([
 		{'_', [
 			{"/",             dnsplice_web_page,        index},
-			{"/dashboard",    dnsplice_web_page,        dashboard},
 			{"/ws/",          dnsplice_web_msg_handler, #{}},
 			{"/static/[...]", cowboy_static,          {priv_dir, dnsplice_web, "static/"}}
 		]}
