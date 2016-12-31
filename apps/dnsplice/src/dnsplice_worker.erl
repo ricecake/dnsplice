@@ -23,7 +23,8 @@
 	handle_cast/2,
 	handle_info/2,
 	terminate/2,
-	code_change/3
+	code_change/3,
+	pairwise_diff/1
 ]).
 
 %% ------------------------------------------------------------------
@@ -89,7 +90,9 @@ handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ route := Choice, send
 	NewState = State#{ replies := NewReplies },
 	if
 		RemainingReplies >  0 -> {noreply, NewState};
-		RemainingReplies =< 0 -> {stop, normal, NewState}
+		RemainingReplies =< 0 ->
+			io:format("~p~n", [pairwise_diff(maps:to_list(NewReplies))]),
+			{stop, normal, NewState}
 	end;
 handle_info(timeout, State) ->
 	{stop, normal, State};
@@ -122,3 +125,16 @@ forward_packet({Label, Address}, Packet) ->
 	{ok, Socket} = gen_udp:open(0, [binary]),
 	ok = gen_udp:send(Socket, Address, 53, Packet),
 	{Socket, Label}.
+
+pairwise_diff(List) when is_list(List) ->
+	do_pairwise_diff(List, []).
+
+do_pairwise_diff([_], Acc) ->
+	lists:sort(lists:flatten(Acc));
+do_pairwise_diff([This |Rest], Acc) ->
+	Comparisons = [compare_items(This, Other) || Other <- Rest],
+	do_pairwise_diff(Rest, [Comparisons |Acc]).
+
+compare_items({AName, AVal} = A, {BName, BVal} = B) when AName < BName -> {A, B, AVal =:= BVal};
+compare_items({AName, AVal} = A, {BName, BVal} = B) when AName > BName -> {B, A, AVal =:= BVal};
+compare_items({_AName, AVal} = A, {_BName, BVal} = B) -> {A, B, AVal =:= BVal}.
