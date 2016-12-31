@@ -6,6 +6,7 @@
   {applications,
    [kernel,
     stdlib,
+    dnsplice,
     erlydtl,
     cowboy,
     jsx
