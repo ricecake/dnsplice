@@ -1,20 +1,20 @@
-{application, dnsplice_web,
- [{description, "An OTP application"},
-  {vsn, "0.1.0"},
-  {registered, []},
-  {mod, { dnsplice_web_app, []}},
-  {applications,
-   [kernel,
-    stdlib,
-    dnsplice,
-    erlydtl,
-    cowboy,
-    jsx
-   ]},
-  {env,[]},
-  {modules, []},
+{application, dnsplice_web, [
+	{description, "DNSplice Web status interface"},
+	{vsn, "0.1.0"},
+	{registered, []},
+	{mod, { dnsplice_web_app, []}},
+	{applications, [
+		kernel,
+		stdlib,
+		dnsplice,
+		erlydtl,
+		cowboy,
+		jsx
+	]},
+	{env,[]},
+	{modules, []},
 
-  {maintainers, []},
-  {licenses, []},
-  {links, []}
- ]}.
+	{maintainers, []},
+	{licenses, []},
+	{links, []}
+]}.
