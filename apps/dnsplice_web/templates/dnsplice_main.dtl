@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<title>DNSplice - {% block title %}Splice the DNS{% endblock %}</title>
+
+		<link href="/static/css/site.css" rel="stylesheet" type="text/css">
+		<link href="/static/css/page/{{ page }}.css" rel="stylesheet" type="text/css">
+		{% block extraCss %}
+		{% endblock %}
+		{% block headExtras %}
+		{% endblock %}
+	</head>
+<body>
+	<body>
+		<div id="main-content">
+			{% block mainContent %}
+			{% endblock %}
+		</div>
+                <script src="/static/js/lib/ext/require.js"></script>
+                <script>
+                        require(['/static/js/common.js'], function(common){
+                                require(['page/{{ page }}'])
+                        });
+                </script>
+	</body>
+</html>

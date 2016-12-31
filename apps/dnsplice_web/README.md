@@ -1,4 +1,4 @@
-dnsplice_webui
+dnsplice_web
 =====
 
 An OTP application

@@ -1,13 +1,14 @@
-{application, dnsplice_api,
+{application, dnsplice_web,
  [{description, "An OTP application"},
   {vsn, "0.1.0"},
   {registered, []},
-  {mod, { dnsplice_api_app, []}},
+  {mod, { dnsplice_web_app, []}},
   {applications,
    [kernel,
     stdlib,
-    jsx,
-    cowboy
+    erlydtl,
+    cowboy,
+    jsx
    ]},
   {env,[]},
   {modules, []},

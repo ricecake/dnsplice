@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc dnsplice_webui top level supervisor.
+%% @doc dnsplice_web top level supervisor.
 %% @end
 %%%-------------------------------------------------------------------
 
--module(dnsplice_webui_sup).
+-module(dnsplice_web_sup).
 
 -behaviour(supervisor).
 

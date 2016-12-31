@@ -1,0 +1,5 @@
+{% extends "dnsplice_main.dtl" %}
+{% block mainContent %}
+{% endblock %}
+{% block extraCss %}
+{% endblock %}

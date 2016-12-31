@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc dnsplice_webui public API
+%% @doc dnsplice_web public API
 %% @end
 %%%-------------------------------------------------------------------
 
--module(dnsplice_webui_app).
+-module(dnsplice_web_app).
 
 -behaviour(application).
 
@@ -15,7 +15,7 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
-    dnsplice_webui_sup:start_link().
+    dnsplice_web_sup:start_link().
 
 %%--------------------------------------------------------------------
 stop(_State) ->
