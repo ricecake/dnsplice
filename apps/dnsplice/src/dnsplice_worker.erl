@@ -91,7 +91,7 @@ handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ route := Choice, send
 	if
 		RemainingReplies >  0 -> {noreply, NewState};
 		RemainingReplies =< 0 ->
-			io:format("~p~n", [pairwise_diff(maps:to_list(NewReplies))]),
+			ok = diff_analyze(maps:to_list(NewReplies)),
 			{stop, normal, NewState}
 	end;
 handle_info(timeout, State) ->
@@ -125,6 +125,26 @@ forward_packet({Label, Address}, Packet) ->
 	{ok, Socket} = gen_udp:open(0, [binary]),
 	ok = gen_udp:send(Socket, Address, 53, Packet),
 	{Socket, Label}.
+
+diff_analyze(List) ->
+	DiffList = pairwise_diff(List),
+	lists:foldl(fun
+		({_, _, true},  Acc)-> Acc;
+		({A, B, false}, Acc)->
+			ASeen = maps:is_key(A, Acc),
+			BSeen = maps:is_key(B, Acc),
+			if
+				not ASeen -> io:format("A:~p~n", [A]);
+				ASeen -> ok
+			end,
+			if
+				not BSeen -> io:format("B:~p~n", [B]);
+				BSeen -> ok
+			end,
+			Acc#{ A => true, B => true}
+	end, #{}, DiffList),
+	ok.
+
 
 pairwise_diff(List) when is_list(List) ->
 	do_pairwise_diff(List, []).
