@@ -128,21 +128,14 @@ forward_packet({Label, Address}, Packet) ->
 
 diff_analyze(List) ->
 	DiffList = pairwise_diff(List),
-	lists:foldl(fun
+	Vals = lists:foldl(fun
 		({_, _, true},  Acc)-> Acc;
-		({A, B, false}, Acc)->
-			ASeen = maps:is_key(A, Acc),
-			BSeen = maps:is_key(B, Acc),
-			if
-				not ASeen -> io:format("A:~p~n", [A]);
-				ASeen -> ok
-			end,
-			if
-				not BSeen -> io:format("B:~p~n", [B]);
-				BSeen -> ok
-			end,
-			Acc#{ A => true, B => true}
+		({{AName, AVal}, {BName, BVal}, false}, Acc)->
+			AHolders = maps:get(AVal, Acc, []),
+			BHolders = maps:get(BVal, Acc, []),
+			Acc#{ AVal => [AName |AHolders], BVal => [BName |BHolders]}
 	end, #{}, DiffList),
+	[ io:format("~p~n", [{lists:usort(Holders), Val, inet_dns:decode(Val)}]) || {Val, Holders} <- maps:to_list(Vals) ],
 	ok.
 
 
