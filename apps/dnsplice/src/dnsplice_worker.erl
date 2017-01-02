@@ -1,8 +1,5 @@
 -module(dnsplice_worker).
 -behaviour(gen_server).
--define(SERVER, ?MODULE).
--include_lib("kernel/src/inet_dns.hrl").
--include_lib("dnsplice/src/records.hrl").
 
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -26,6 +23,16 @@
 	code_change/3,
 	pairwise_diff/1
 ]).
+
+%% ------------------------------------------------------------------
+%% Defines and includes
+%% ------------------------------------------------------------------
+
+-include_lib("dnsplice/src/records.hrl").
+-include_lib("kernel/src/inet_dns.hrl").
+-define(SERVER, ?MODULE).
+-define(record_to_list(Rec, Ref), lists:zip(record_info(fields, Rec),tl(tuple_to_list(Ref)))).
+-define(record_to_map(Rec, Ref), maps:from_list(?record_to_list(Rec, Ref))).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -100,7 +107,6 @@ handle_info(_Info, State) ->
 	{noreply, State}.
 
 terminate(_Reason, _State) ->
-	%io:format("~p~n", [State]),
 	ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -135,7 +141,7 @@ diff_analyze(List) ->
 			BHolders = maps:get(BVal, Acc, []),
 			Acc#{ AVal => [AName |AHolders], BVal => [BName |BHolders]}
 	end, #{}, DiffList),
-	[ io:format("~p~n", [{lists:usort(Holders), Val, inet_dns:decode(Val)}]) || {Val, Holders} <- maps:to_list(Vals) ],
+	[ io:format("~p~n", [{lists:usort(Holders), normalize_dns_record(Val)}]) || {Val, Holders} <- maps:to_list(Vals) ],
 	ok.
 
 
@@ -151,3 +157,41 @@ do_pairwise_diff([This |Rest], Acc) ->
 compare_items({AName, AVal} = A, {BName, BVal} = B) when AName < BName -> {A, B, AVal =:= BVal};
 compare_items({AName, AVal} = A, {BName, BVal} = B) when AName > BName -> {B, A, AVal =:= BVal};
 compare_items({_AName, AVal} = A, {_BName, BVal} = B) -> {A, B, AVal =:= BVal}.
+
+normalize_dns_record(Packet) when is_binary(Packet) ->
+	{ok, Record} = inet_dns:decode(Packet),
+	normalize_dns_record(Record);
+normalize_dns_record(#dns_rec{} = Record) ->
+	maps:from_list([ expand_dns_rec_field(Field) || Field <- ?record_to_list(dns_rec, Record)]).
+
+expand_dns_rec_field({header, Header}) -> {header, ?record_to_map(dns_header, Header)};
+expand_dns_rec_field({qdlist, QDs}) -> {qdlist, [ all_rr_cleanup(?record_to_map(dns_query, Q)) || Q <- QDs]};
+expand_dns_rec_field({arlist, OPTs}) -> {arlist, [ all_rr_cleanup(?record_to_map(dns_rr_opt, OPT)) || OPT <- OPTs]};
+expand_dns_rec_field({Section, RRs}) -> {Section, [ clean_rr(?record_to_map(dns_rr, RR)) || RR <- RRs]};
+expand_dns_rec_field(Other) -> Other.
+
+clean_rr(#{ type := a, data := Data } = RR) ->
+	all_rr_cleanup(RR#{ data := list_to_binary(inet_parse:ntoa(Data)) });
+clean_rr(#{ type := aaaa, data := Data } = RR) ->
+	all_rr_cleanup(RR#{ data := list_to_binary(inet_parse:ntoa(Data)) });
+clean_rr(#{ type := mx, data := {Prio, Exchange} } = RR) ->
+	all_rr_cleanup(RR#{ data := #{
+		priority => Prio,
+		exchange => list_to_binary(Exchange)
+	} });
+clean_rr(#{ type := soa,  data := {MName,RName,Serial,Refresh,Retry,Expiry,Minimum} } = RR) ->
+	all_rr_cleanup(RR#{ data := #{
+		mname   => list_to_binary(MName),
+		rname   => list_to_binary(RName),
+		serial  => Serial,
+		refresh => Refresh,
+		retry   => Retry,
+		expiry  => Expiry,
+		minimum => Minimum
+	} });
+clean_rr(RR) -> all_rr_cleanup(RR).
+
+all_rr_cleanup(#{ bm := BitMap } = RR) when is_list(BitMap) -> all_rr_cleanup(RR#{ bm := list_to_binary(BitMap) });
+all_rr_cleanup(#{ func := _ } = RR) -> all_rr_cleanup(maps:without([func], RR));
+all_rr_cleanup(#{ domain := Domain } = RR) when is_list(Domain) -> all_rr_cleanup(RR#{ domain := list_to_binary(Domain) });
+all_rr_cleanup(RR) -> RR.
