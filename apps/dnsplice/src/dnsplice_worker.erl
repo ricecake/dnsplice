@@ -66,22 +66,23 @@ handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
 handle_cast(determine_route, #{ packet := Packet } = State) ->
-	{ok, Default} = application:get_env(default_backend),
-	Choice = try
+	{ok, DefaultBackend} = application:get_env(default_backend),
+	{ok, DefaultReports} = application:get_env(default_reports),
+	{Route, Reports} = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
 		DomainNames = build_subdomains(Domain),
 		mnesia:activity(async_dirty, fun
-			FindRoute([]) -> Default;
+			FindRoute([]) -> {DefaultBackend, DefaultReports};
 			FindRoute([Next |Rest]) ->
 				case mnesia:read(route, Next) of
 					[] -> FindRoute(Rest);
-					[#route{ backend = Backend }] -> Backend
+					[#route{ backend = Backend, reported = Reports }] -> {Backend, Reports}
 				end
 		end, [DomainNames])
 	catch
-		_:_ -> Default
+		_:_ -> {DefaultBackend, DefaultReports}
 	end,
-	{noreply, State#{ route => Choice }};
+	{noreply, State#{ route => Route, reported => Reports }};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
@@ -98,13 +99,18 @@ handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ replies := Replies, s
 	if
 		RemainingReplies >  0 -> {noreply, NewState};
 		RemainingReplies =< 0 ->
-			lager:info("Entering Analysis Phase"),
-			{ok, Diffs} = diff_analyze(maps:to_list(NewReplies)),
-			case Diffs of
-				[] -> ok;
-				DiffList ->
-					lager:warning("Found Difference: ~s", [DiffList]),
-					ok
+			Reported = maps:get(reported, State),
+			if
+				not Reported -> ok;
+				Reported ->
+					lager:info("Entering Analysis Phase"),
+					{ok, Diffs} = diff_analyze(maps:to_list(NewReplies)),
+					case Diffs of
+						[] -> ok;
+						DiffList ->
+							lager:warning("Found Difference: ~s", [DiffList]),
+							ok
+					end
 			end,
 			{stop, normal, NewState}
 	end;
