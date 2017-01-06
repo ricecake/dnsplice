@@ -101,7 +101,7 @@ handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ replies := Replies, s
 					case Diffs of
 						[] -> ok;
 						DiffList ->
-							lager:warning("Found Difference: ~s", [DiffList]),
+							lager:warning("Found Difference: ~p", [DiffList]),
 							ok
 					end
 			end,
