@@ -11,6 +11,8 @@
 %% Defines and includes
 %% ------------------------------------------------------------------
 -include_lib("dnsplice/src/records.hrl").
+-define(record_to_list(Rec, Ref), lists:zip(record_info(fields, Rec),tl(tuple_to_list(Ref)))).
+-define(record_to_map(Rec, Ref), maps:from_list(?record_to_list(Rec, Ref))).
 
 
 %% ------------------------------------------------------------------
@@ -34,18 +36,22 @@ get_domain_route(Domain) ->
 
 set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 	{ok, DefaultBackend} = application:get_env(dnsplice, default_backend),
-	{ok, DefaultReports} = application:get_env(dnsplice, default_reports),
-	NewRouteEntry = maps:with(record_info(fields, route), maps:merge(#{
-		domain   => Domain,
-		backend  => DefaultBackend,
-		reported => DefaultReports
-	}, maps:without([domain], Fields))),
-	RouteRecord = #route{
-		domain=maps:get(domain, NewRouteEntry),
-		backend=maps:get(backend, NewRouteEntry),
-		reported=maps:get(reported, NewRouteEntry)
-	},
+	{ok, DefaultAlerts} = application:get_env(dnsplice, default_alerts),
 	mnesia:activity(transaction, fun()->
+		Default = case mnesia:read(route, Domain) of
+			[Route] -> ?record_to_map(route, Route);
+			[] -> #{
+				domain   => Domain,
+				backend  => DefaultBackend,
+				alerts   => DefaultAlerts
+			}
+		end,
+		NewRouteEntry = maps:with(record_info(fields, route), maps:merge(Default, maps:without([domain], Fields))),
+		RouteRecord = #route{
+			domain=maps:get(domain, NewRouteEntry),
+			backend=maps:get(backend, NewRouteEntry),
+			alerts=maps:get(alerts, NewRouteEntry)
+		},
 		mnesia:write(RouteRecord)
 	end).
 
