@@ -38,9 +38,10 @@ cowboy_start() ->
 	{ok, Options} = determine_options(),
 	Dispatch      = cowboy_router:compile([
 		{'_', [
-			{"/",             dnsplice_web_page,        index},
-			{"/ws/",          dnsplice_web_msg_handler, #{}},
-			{"/static/[...]", cowboy_static,          {priv_dir, dnsplice_web, "static/"}}
+			{"/",               dnsplice_web_page,        index},
+			{"/ws/",            dnsplice_web_msg_handler, #{}},
+			{"/route/[:route]", dnsplice_web_route,       #{}},
+			{"/static/[...]",   cowboy_static,            {priv_dir, dnsplice_web, "static/"}}
 		]}
 	]),
 	cowboy:start_clear(dnsplice_web, 25, Options, #{ env => #{ dispatch => Dispatch }}).
