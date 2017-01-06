@@ -66,16 +66,16 @@ handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
 handle_cast(determine_route, #{ packet := Packet } = State) ->
-	{Route, Reports} = try
+	{Route, Alerts} = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
 		dnsplice:get_domain_route(Domain)
 	catch
 		_:_ ->
 			{ok, DefaultBackend} = application:get_env(default_backend),
-			{ok, DefaultReports} = application:get_env(default_reports),
-			{DefaultBackend, DefaultReports}
+			{ok, DefaultAlerts} = application:get_env(default_alerts),
+			{DefaultBackend, DefaultAlerts}
 	end,
-	{noreply, State#{ route => Route, reported => Reports }};
+	{noreply, State#{ route => Route, alerts => Alerts }};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
@@ -92,10 +92,10 @@ handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ replies := Replies, s
 	if
 		RemainingReplies >  0 -> {noreply, NewState};
 		RemainingReplies =< 0 ->
-			Reported = maps:get(reported, State),
+			Alerts = maps:get(alerts, State),
 			if
-				not Reported -> ok;
-				Reported ->
+				not Alerts -> ok;
+				Alerts ->
 					lager:info("Entering Analysis Phase"),
 					{ok, Diffs} = diff_analyze(maps:to_list(NewReplies)),
 					case Diffs of

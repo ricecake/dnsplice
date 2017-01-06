@@ -24,12 +24,12 @@ get_domain_route(Domain) ->
 	mnesia:activity(async_dirty, fun
 		FindRoute([]) ->
 			{ok, DefaultBackend} = application:get_env(dnsplice, default_backend),
-			{ok, DefaultReports} = application:get_env(dnsplice, default_reports),
-			{DefaultBackend, DefaultReports};
+			{ok, DefaultAlerts} = application:get_env(dnsplice, default_alerts),
+			{DefaultBackend, DefaultAlerts};
 		FindRoute([Next |Rest]) ->
 			case mnesia:read(route, Next) of
 				[] -> FindRoute(Rest);
-				[#route{ backend = Backend, reported = Reports }] -> {Backend, Reports}
+				[#route{ backend = Backend, alerts = Alerts }] -> {Backend, Alerts}
 			end
 	end, [DomainNames]).
 
@@ -70,4 +70,3 @@ do_subdomain_build([Chunk |Rest], []) ->
 	do_subdomain_build(Rest, [Chunk]);
 do_subdomain_build([Chunk |Rest], [Last |_] = Acc) ->
 	do_subdomain_build(Rest, [<<Chunk/binary, $., Last/binary>> |Acc]).
-

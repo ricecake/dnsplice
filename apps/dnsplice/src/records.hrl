@@ -1,1 +1,1 @@
--record(route, { domain :: binary(), backend :: binary(), reported :: boolean() }).
+-record(route, { domain :: binary(), backend :: binary(), alerts :: boolean() }).
