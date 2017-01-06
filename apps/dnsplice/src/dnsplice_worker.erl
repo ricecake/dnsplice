@@ -167,8 +167,7 @@ normalize_dns_record(#dns_rec{} = Record) ->
 expand_dns_rec_field({header, Header}) -> {header, ?record_to_map(dns_header, Header)};
 expand_dns_rec_field({qdlist, QDs}) -> {qdlist, [ all_rr_cleanup(?record_to_map(dns_query, Q)) || Q <- QDs]};
 expand_dns_rec_field({arlist, OPTs}) -> {arlist, [ all_rr_cleanup(?record_to_map(dns_rr_opt, OPT)) || OPT <- OPTs]};
-expand_dns_rec_field({Section, RRs}) -> {Section, [ clean_rr(?record_to_map(dns_rr, RR)) || RR <- RRs]};
-expand_dns_rec_field(Other) -> Other.
+expand_dns_rec_field({Section, RRs}) -> {Section, [ clean_rr(?record_to_map(dns_rr, RR)) || RR <- RRs]}.
 
 clean_rr(#{ type := a, data := Data } = RR) ->
 	all_rr_cleanup(RR#{ data := list_to_binary(inet_parse:ntoa(Data)) });
