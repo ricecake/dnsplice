@@ -18,7 +18,7 @@ content_types_provided(Req, State) ->
 ], Req, State}.
 
 allowed_methods(Req, State) ->
-	{[<<"GET">>, <<"POST">>], Req, State}
+	{[<<"GET">>, <<"POST">>], Req, State}.
 
 content_types_accepted(Req, State) ->
 	{[{{<<"application">>, <<"json">>, []}, create_route}],
@@ -32,5 +32,7 @@ is_authorized(Req, State) ->
 		{basic, User = <<"Alladin">>, <<"open sesame">>} ->
 			{true, Req, User};
 		_ ->
-			{{false, <<"Basic realm=\"cowboy\"">>}, Req, State}
+			{{false, <<"Basic realm=\"dnsplice\"">>}, Req, State}
 	end.
+
+list_route_json(Req, State) -> {jsx:encode([]), Req, State}.
