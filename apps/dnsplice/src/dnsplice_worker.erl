@@ -49,6 +49,7 @@ handle(Packet, Sender) ->
 %% ------------------------------------------------------------------
 
 init({Packet, Sender}) ->
+	gen_server:cast(self(), determine_route),
 	{ok, Servers} = application:get_env(servers),
 	Sockets = [ forward_packet(Backend, Packet) || Backend <- Servers ],
 	State = #{
@@ -57,7 +58,6 @@ init({Packet, Sender}) ->
 		replies => #{},
 		sockets => maps:from_list(Sockets)
 	},
-	gen_server:cast(self(), determine_route),
 	Timeout = application:get_env(dnsplice, packet_timeout, timer:seconds(1)),
 	erlang:send_after(Timeout, self(), timeout),
 	{ok, State}.
