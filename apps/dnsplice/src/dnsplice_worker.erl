@@ -182,6 +182,7 @@ clean_rr(#{ type := soa,  data := {MName,RName,Serial,Refresh,Retry,Expiry,Minim
 		expiry  => Expiry,
 		minimum => Minimum
 	} });
+clean_rr(#{ data := Data } = RR) when is_list(Data)  -> all_rr_cleanup(RR#{ data := list_to_binary(Data) });
 clean_rr(#{ data := Data } = RR) when is_tuple(Data) -> all_rr_cleanup(RR#{ data := tuple_to_list(Data) }).
 
 all_rr_cleanup(#{ bm := BitMap } = RR) when is_list(BitMap) -> all_rr_cleanup(RR#{ bm := list_to_binary(BitMap) });
