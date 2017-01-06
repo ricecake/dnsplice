@@ -85,12 +85,12 @@ handle_cast(determine_route, #{ packet := Packet } = State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ route := Choice, sender := Sender, replies := Replies, sockets := Sockets } = State) ->
+handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ replies := Replies, sockets := Sockets } = State) ->
 	#{ Socket := SockName } = Sockets,
-	Done = Choice =:= SockName,
+	Done = SockName =:= maps:get(route, State),
 	ok = if
 		not Done -> ok;
-		Done -> dnsplice_listener:send_reply(ReplyPacket, Sender)
+		Done -> dnsplice_listener:send_reply(ReplyPacket, maps:get(sender, State))
 	end,
 	NewReplies = Replies#{ SockName => ReplyPacket },
 	RemainingReplies = maps:size(Sockets) - maps:size(NewReplies),
