@@ -66,21 +66,14 @@ handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
 handle_cast(determine_route, #{ packet := Packet } = State) ->
-	{ok, DefaultBackend} = application:get_env(default_backend),
-	{ok, DefaultReports} = application:get_env(default_reports),
 	{Route, Reports} = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-		DomainNames = build_subdomains(Domain),
-		mnesia:activity(async_dirty, fun
-			FindRoute([]) -> {DefaultBackend, DefaultReports};
-			FindRoute([Next |Rest]) ->
-				case mnesia:read(route, Next) of
-					[] -> FindRoute(Rest);
-					[#route{ backend = Backend, reported = Reports }] -> {Backend, Reports}
-				end
-		end, [DomainNames])
+		dnsplice:get_domain_route(Domain)
 	catch
-		_:_ -> {DefaultBackend, DefaultReports}
+		_:_ ->
+			{ok, DefaultBackend} = application:get_env(default_backend),
+			{ok, DefaultReports} = application:get_env(default_reports),
+			{DefaultBackend, DefaultReports}
 	end,
 	{noreply, State#{ route => Route, reported => Reports }};
 handle_cast(_Msg, State) ->
@@ -128,17 +121,6 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
-
-build_subdomains(Domain) when is_list(Domain)-> build_subdomains(list_to_binary(Domain));
-build_subdomains(Domain) when is_binary(Domain)->
-	Labels = binary:split(Domain, <<".">>, [global]),
-	do_subdomain_build(lists:reverse(Labels), []).
-
-do_subdomain_build([], Acc) -> Acc;
-do_subdomain_build([Chunk |Rest], []) ->
-	do_subdomain_build(Rest, [Chunk]);
-do_subdomain_build([Chunk |Rest], [Last |_] = Acc) ->
-	do_subdomain_build(Rest, [<<Chunk/binary, $., Last/binary>> |Acc]).
 
 forward_packet({Label, Address}, Packet) ->
 	{ok, Socket} = gen_udp:open(0, [binary]),
