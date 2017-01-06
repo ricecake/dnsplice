@@ -98,7 +98,14 @@ handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ replies := Replies, s
 	if
 		RemainingReplies >  0 -> {noreply, NewState};
 		RemainingReplies =< 0 ->
-			ok = diff_analyze(maps:to_list(NewReplies)),
+			lager:info("Entering Analysis Phase"),
+			{ok, Diffs} = diff_analyze(maps:to_list(NewReplies)),
+			case Diffs of
+				[] -> ok;
+				DiffList ->
+					lager:warning("Found Difference: ~s", [DiffList]),
+					ok
+			end,
 			{stop, normal, NewState}
 	end;
 handle_info(timeout, State) ->
@@ -141,8 +148,7 @@ diff_analyze(List) ->
 			BHolders = maps:get(BVal, Acc, []),
 			Acc#{ AVal => [AName |AHolders], BVal => [BName |BHolders]}
 	end, #{}, DiffList),
-	[ io:format("~p~n", [{lists:usort(Holders), normalize_dns_record(Val)}]) || {Val, Holders} <- maps:to_list(Vals) ],
-	ok.
+	{ok, [ {lists:usort(Holders), normalize_dns_record(Val)} || {Val, Holders} <- maps:to_list(Vals) ]}.
 
 
 pairwise_diff(List) when is_list(List) ->
@@ -188,7 +194,7 @@ clean_rr(#{ type := soa,  data := {MName,RName,Serial,Refresh,Retry,Expiry,Minim
 		expiry  => Expiry,
 		minimum => Minimum
 	} });
-clean_rr(RR) -> all_rr_cleanup(RR).
+clean_rr(#{ data := Data } = RR) when is_tuple(Data) -> all_rr_cleanup(RR#{ data := tuple_to_list(Data) }).
 
 all_rr_cleanup(#{ bm := BitMap } = RR) when is_list(BitMap) -> all_rr_cleanup(RR#{ bm := list_to_binary(BitMap) });
 all_rr_cleanup(#{ func := _ } = RR) -> all_rr_cleanup(maps:without([func], RR));
