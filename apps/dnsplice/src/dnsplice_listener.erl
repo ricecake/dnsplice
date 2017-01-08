@@ -55,9 +55,6 @@ handle_cast(_Msg, State) ->
 
 handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) ->
 	{ok, _} = dnsplice_worker:handle(Packet, {IP, InPortNo}),
-	{noreply, State};
-handle_info(Info, State) ->
-	lager:error("Unhandled Message: ~p~n", [Info]),
 	{noreply, State}.
 
 terminate(_Reason, _State) ->
