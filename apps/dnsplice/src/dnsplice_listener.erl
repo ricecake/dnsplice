@@ -41,7 +41,7 @@ send_reply(Packet, {IP, Port}) ->
 init(Args) ->
 	Port = application:get_env(dnsplice, listen_port, 5300),
 	Opts = application:get_env(dnsplice, listen_opts, []),
-	{ok, Socket} = gen_udp:open(Port, [binary |Opts]),
+	{ok, Socket} = gen_udp:open(Port, [binary, {active, once} |Opts]),
 	{ok, Args#{ socket => Socket }}.
 
 handle_call(_Request, _From, State) ->
@@ -55,6 +55,7 @@ handle_cast(_Msg, State) ->
 
 handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) ->
 	{ok, _} = dnsplice_worker:handle(Packet, {IP, InPortNo}),
+	ok = inet:setopts(Socket, [{active, once}]),
 	{noreply, State}.
 
 terminate(_Reason, _State) ->
