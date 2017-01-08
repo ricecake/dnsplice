@@ -20,8 +20,7 @@
 	handle_cast/2,
 	handle_info/2,
 	terminate/2,
-	code_change/3,
-	pairwise_diff/1
+	code_change/3
 ]).
 
 %% ------------------------------------------------------------------
