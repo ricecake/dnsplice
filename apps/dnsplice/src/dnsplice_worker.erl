@@ -67,7 +67,7 @@ handle_call(_Request, _From, State) ->
 handle_cast(determine_route, #{ packet := Packet } = State) ->
 	{Route, Alerts} = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-		dnsplice:get_domain_route(Domain)
+		dnsplice:get_domain_route(to_lower(Domain))
 	catch
 		_:_ ->
 			{ok, DefaultBackend} = application:get_env(default_backend),
@@ -188,3 +188,10 @@ all_rr_cleanup(#{ bm := BitMap } = RR) when is_list(BitMap) -> all_rr_cleanup(RR
 all_rr_cleanup(#{ func := _ } = RR) -> all_rr_cleanup(maps:without([func], RR));
 all_rr_cleanup(#{ domain := Domain } = RR) when is_list(Domain) -> all_rr_cleanup(RR#{ domain := list_to_binary(Domain) });
 all_rr_cleanup(RR) -> RR.
+
+to_lower(String) when is_list(String) -> string:to_lower(String);
+to_lower(String) when is_binary(String) ->
+	<< <<(do_lower(Char)):8>> || <<Char:8>> <= String >>.
+
+do_lower(Char) when Char >= 65 andalso Char =< 90 -> Char + 32;
+do_lower(Char) -> Char.
