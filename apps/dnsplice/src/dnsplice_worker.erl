@@ -69,7 +69,8 @@ handle_cast(determine_route, #{ packet := Packet } = State) ->
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
 		dnsplice:get_domain_route(to_lower(Domain))
 	catch
-		_:_ ->
+		Type:Error ->
+			lager:error("Encountered ~w:~w finding route", [Type, Error]),
 			{ok, DefaultBackend} = application:get_env(default_backend),
 			{ok, DefaultAlerts} = application:get_env(default_alerts),
 			{DefaultBackend, DefaultAlerts}
@@ -195,3 +196,4 @@ to_lower(String) when is_binary(String) ->
 
 do_lower(Char) when Char >= 65 andalso Char =< 90 -> Char + 32;
 do_lower(Char) -> Char.
+
