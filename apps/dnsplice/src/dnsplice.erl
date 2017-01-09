@@ -4,7 +4,8 @@
 %% ------------------------------------------------------------------
 -export([
 	get_domain_route/1,
-	set_domain_route/2
+	set_domain_route/2,
+	get_backends/0
 ]).
 
 %% ------------------------------------------------------------------
@@ -54,6 +55,9 @@ set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 		},
 		mnesia:write(RouteRecord)
 	end).
+
+get_backends() ->
+	maps:from_list([{Backend, list_to_binary(IP)} ||{Backend, IP} <- application:get_env(dnsplice, backends, [])]).
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
