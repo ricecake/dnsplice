@@ -41,7 +41,8 @@ start_link(Args) ->
 	gen_server:start_link(?MODULE, Args, []).
 
 handle(Packet, Sender) ->
-	dnsplice_worker_sup:start_worker(Packet, Sender).
+	{ok, _Pid} = dnsplice_worker_sup:start_worker(Packet, Sender),
+	ok.
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions

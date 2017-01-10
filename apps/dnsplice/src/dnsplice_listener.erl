@@ -54,7 +54,12 @@ handle_cast(_Msg, State) ->
 	{noreply, State}.
 
 handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) ->
-	{ok, _} = dnsplice_worker:handle(Packet, {IP, InPortNo}),
+	ok = try
+		dnsplice_worker:handle(Packet, {IP, InPortNo})
+        catch
+                Type:Error ->
+                        lager:error("Encountered ~w:~w while routing", [Type, Error])
+	end,
 	ok = inet:setopts(Socket, [{active, once}]),
 	{noreply, State}.
 
