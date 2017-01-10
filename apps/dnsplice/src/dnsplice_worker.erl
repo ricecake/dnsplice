@@ -80,6 +80,7 @@ handle_cast(_Msg, State) ->
 	{noreply, State}.
 
 handle_info({udp, Socket, _IP, _InPortNo, ReplyPacket}, #{ replies := Replies, sockets := Sockets } = State) ->
+	ok = gen_udp:close(Socket),
 	#{ Socket := SockName } = Sockets,
 	Done = SockName =:= maps:get(route, State),
 	ok = if
