@@ -160,7 +160,10 @@ normalize_dns_record(#dns_rec{} = Record) ->
 
 expand_dns_rec_field({header, Header}) -> {header, ?record_to_map(dns_header, Header)};
 expand_dns_rec_field({qdlist, QDs}) -> {qdlist, [ all_rr_cleanup(?record_to_map(dns_query, Q)) || Q <- QDs]};
-expand_dns_rec_field({arlist, OPTs}) -> {arlist, [ all_rr_cleanup(?record_to_map(dns_rr_opt, OPT)) || OPT <- OPTs]};
+expand_dns_rec_field({arlist, OPTs}) ->
+	RRs    = [clean_rr(?record_to_map(dns_rr, RR)) || RR <- OPTs, dns_rr == element(1, RR) ],
+	RROpts = [all_rr_cleanup(?record_to_map(dns_rr_opt, OPT)) || OPT <- OPTs, dns_rr_opt == element(1, OPT)],
+	{arlist, RRs ++ RROpts};
 expand_dns_rec_field({Section, RRs}) -> {Section, [ clean_rr(?record_to_map(dns_rr, RR)) || RR <- RRs]}.
 
 clean_rr(#{ type := a, data := Data } = RR) ->
