@@ -11,7 +11,9 @@
 
 -export([
 	list_route_json/2,
-	create_route_json/2
+	create_route_json/2,
+	list_route_html/2,
+	create_route_form/2
 ]).
 
 
@@ -35,13 +37,15 @@ allowed_methods(Req, State) ->
 
 content_types_provided(Req, State) ->
 	Providers = [
-		{<<"application/json">>, list_route_json}
+		{<<"application/json">>, list_route_json},
+		{<<"text/html">>, list_route_html}
 	],
 	{Providers, Req, State}.
 
 content_types_accepted(Req, State) ->
 	Types = [
-		{{<<"application">>, <<"json">>, []}, create_route_json}
+		{{<<"application">>, <<"json">>, []}, create_route_json},
+		{{<<"application">>, <<"x-www-form-urlencoded">>, []}, create_route_form}
 	],
 	{Types,	Req, State}.
 
@@ -68,4 +72,23 @@ list_route_json(Req, Domain) ->
 	}),
 	{Result, Req, Domain}.
 
+list_route_html(Req, Domain) ->
+	{Route, Alert} = dnsplice:get_domain_route(Domain),
+	RouteIP = proplists:get_value(Route, application:get_env(dnsplice, backends, [])),
+	TemplateArgs = #{
+		domain => Domain,
+		alerts => Alert,
+		route  => Route,
+		ip     => list_to_binary(RouteIP),
+		backends => maps:to_list(dnsplice:get_backends())
+	},
+	{ok, Page} = dnsplice_route_dtl:render(TemplateArgs),
+	{Page, Req, Domain}.
+
 create_route_json(Req, State) -> {true, Req, State}.
+
+create_route_form(Req, State) ->
+	{ok, Input, Req2} = cowboy_req:read_urlencoded_body(Req),
+	Args = maps:from_list([{binary_to_existing_atom(Field, utf8), Value} || {Field, Value} <- Input]),
+	dnsplice:set_domain_route(State, Args#{ alerts => maps:is_key(alerts, Args) }),
+	{true, Req2, State}.
