@@ -1,0 +1,16 @@
+{% extends "dnsplice_main.dtl" %}
+{% block mainContent %}
+<form method="POST">
+	{{ domain }}
+	<label for="{{domain}}_alerts">Alerts</label>
+	<input id="{{domain}}_alerts" type="checkbox" name="alerts"{% if alerts %} checked{% endif %}/>
+	<select name="backend">
+		{% for backend, value in backends %}
+			<option value="{{ backend }}"{% if backend == route %} selected{% endif%}>
+				{{ backend }} [{{ value }}]
+			</option>
+		{% endfor %}
+	</select>
+	<input type="submit" value="Update"/>
+</form>
+{% endblock %}
