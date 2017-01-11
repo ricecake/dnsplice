@@ -49,14 +49,11 @@ handle(Packet, Sender) ->
 %% ------------------------------------------------------------------
 
 init({Packet, Sender}) ->
-	gen_server:cast(self(), determine_route),
-	{ok, Servers} = application:get_env(servers),
-	Sockets = [ forward_packet(Backend, Packet) || Backend <- Servers ],
+	gen_server:cast(self(), setup_route),
 	State = #{
 		packet => Packet,
 		sender => Sender,
-		replies => #{},
-		sockets => maps:from_list(Sockets)
+		replies => #{}
 	},
 	Timeout = application:get_env(dnsplice, packet_timeout, timer:seconds(1)),
 	erlang:send_after(Timeout, self(), timeout),
@@ -65,7 +62,9 @@ init({Packet, Sender}) ->
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
-handle_cast(determine_route, #{ packet := Packet } = State) ->
+handle_cast(setup_route, #{ packet := Packet } = State) ->
+	{ok, Servers} = application:get_env(servers),
+	Sockets = maps:from_list([ forward_packet(Backend, Packet) || Backend <- Servers ]),
 	{Route, Alerts} = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
 		dnsplice:get_domain_route(to_lower(Domain))
@@ -76,7 +75,7 @@ handle_cast(determine_route, #{ packet := Packet } = State) ->
 			{ok, DefaultAlerts} = application:get_env(default_alerts),
 			{DefaultBackend, DefaultAlerts}
 	end,
-	{noreply, State#{ route => Route, alerts => Alerts }};
+	{noreply, State#{ route => Route, alerts => Alerts, sockets => Sockets }};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
