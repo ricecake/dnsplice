@@ -85,10 +85,19 @@ list_route_html(Req, Domain) ->
 	{ok, Page} = dnsplice_route_dtl:render(TemplateArgs),
 	{Page, Req, Domain}.
 
-create_route_json(Req, State) -> {true, Req, State}.
+create_route_json(Req, State) ->
+	HasBody = cowboy_req:has_body(Req),
+	if
+		not HasBody -> {false, Req, State};
+		HasBody ->
+			{ok, Input, Req2} = cowboy_req:read_body(Req),
+			Args = maps:from_list([{binary_to_existing_atom(Field, utf8), Value} || {Field, Value} <- jsx:decode(Input)]),
+			ok = dnsplice:set_domain_route(State, Args),
+			{true, Req2, State}
+	end.
 
 create_route_form(Req, State) ->
 	{ok, Input, Req2} = cowboy_req:read_urlencoded_body(Req),
 	Args = maps:from_list([{binary_to_existing_atom(Field, utf8), Value} || {Field, Value} <- Input]),
-	dnsplice:set_domain_route(State, Args#{ alerts => maps:is_key(alerts, Args) }),
+	ok = dnsplice:set_domain_route(State, Args#{ alerts => maps:is_key(alerts, Args) }),
 	{true, Req2, State}.
