@@ -36,6 +36,8 @@
 %%
 %% @end
 
+-spec get_domain_route(Domain :: binary()) -> {Backend :: binary(), Alerts :: boolean()}.
+
 get_domain_route(Domain) ->
 	DomainNames = build_subdomains(Domain),
 	mnesia:activity(async_dirty, fun
@@ -56,6 +58,8 @@ get_domain_route(Domain) ->
 %% Does not need to have all options passed in
 %%
 %% @end
+
+-spec set_domain_route(Domain :: binary(), Params :: map()) -> ok.
 
 set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 	{ok, DefaultBackend} = application:get_env(dnsplice, default_backend),
@@ -83,6 +87,8 @@ set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 %% Returns the configured backends, and their IP addresses.
 %%
 %% @end
+
+-spec get_backends() -> #{ Backend :: binary() => IP :: string() }.
 
 get_backends() ->
 	maps:from_list([{Backend, list_to_binary(IP)} ||{Backend, IP} <- application:get_env(dnsplice, backends, [])]).

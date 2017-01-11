@@ -62,6 +62,8 @@ start_link(Args) ->
 %%
 %%@end
 
+-spec handle(Packet :: binary(), Sender :: {IP :: inet:ip_address(), Port :: inet:port_number()}) -> ok.
+
 handle(Packet, Sender) ->
 	{ok, _Pid} = dnsplice_worker_sup:start_worker(Packet, Sender),
 	ok.
@@ -144,6 +146,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
+
+-spec forward_packet({Label :: binary(), Address :: inet:ip_address()}, Packet :: binary()) ->
+	{Socket :: port(), Label :: binary()}.
 
 forward_packet({Label, Address}, Packet) ->
 	{ok, Socket} = gen_udp:open(0, [binary]),

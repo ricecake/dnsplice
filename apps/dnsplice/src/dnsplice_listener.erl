@@ -52,6 +52,8 @@ start_link() ->
 %%
 %%@end
 
+-spec send_reply(Response :: binary(), {IP :: inet:ip_address(), Port :: inet:port_number()}) -> 'ok'.
+
 send_reply(Packet, {IP, Port}) ->
 	gen_server:cast(?SERVER, {reply, IP, Port, Packet}).
 
