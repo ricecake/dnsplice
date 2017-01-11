@@ -88,7 +88,7 @@ set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 %%
 %% @end
 
--spec get_backends() -> #{ Backend :: binary() => IP :: string() }.
+-spec get_backends() -> #{ Backend :: binary() => IP :: binary() }.
 
 get_backends() ->
 	maps:from_list([{Backend, list_to_binary(IP)} ||{Backend, IP} <- application:get_env(dnsplice, backends, [])]).
