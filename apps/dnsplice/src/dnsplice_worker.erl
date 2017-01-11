@@ -1,3 +1,10 @@
+%%@doc DNSplice worker
+%%
+%% This module is responsible for processing DNS requests,
+%% handing them off to a worker, and routing the replys back to
+%% the client.
+%%
+%%@end
 -module(dnsplice_worker).
 -behaviour(gen_server).
 
@@ -37,8 +44,23 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
+%%@doc starts a worker process
+%%
+%% function that starts a worker process.  Should be called by the
+%% dnsplice worker supervisor.
+%%
+%%@end
+
 start_link(Args) ->
 	gen_server:start_link(?MODULE, Args, []).
+
+%%@doc Starts the process of forwarding DNS requests
+%%
+%% Starts up a DNS request worker, and starts the process
+%% of forwarding packets to the various backends and selecting
+%% which response should be returned to the client.
+%%
+%%@end
 
 handle(Packet, Sender) ->
 	{ok, _Pid} = dnsplice_worker_sup:start_worker(Packet, Sender),
@@ -200,4 +222,3 @@ to_lower(String) when is_binary(String) ->
 
 do_lower(Char) when Char >= 65 andalso Char =< 90 -> Char + 32;
 do_lower(Char) -> Char.
-

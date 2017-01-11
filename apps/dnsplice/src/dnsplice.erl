@@ -1,3 +1,10 @@
+%% @doc DNSplice interface module
+%%
+%% This module provides the public interface to the DNSplice application,
+%% and is the primary way that other apps should access its functionality.
+%%
+%% @end
+
 -module(dnsplice).
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -20,6 +27,15 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
+%% @doc Returns domain routing information
+%%
+%% Returns details about how a particular domain will route, including
+%% which backend, IP address, and if it will be reported if there is a
+%% difference.  This will return the default information if there is no
+%% explicit route set.
+%%
+%% @end
+
 get_domain_route(Domain) ->
 	DomainNames = build_subdomains(Domain),
 	mnesia:activity(async_dirty, fun
@@ -34,6 +50,12 @@ get_domain_route(Domain) ->
 			end
 	end, [DomainNames]).
 
+%% @doc sets an explicit DNS route
+%%
+%% Sets or updates a domain route.
+%% Does not need to have all options passed in
+%%
+%% @end
 
 set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 	{ok, DefaultBackend} = application:get_env(dnsplice, default_backend),
@@ -55,6 +77,12 @@ set_domain_route(Domain, Fields) when is_map(Fields), is_binary(Domain) ->
 		},
 		mnesia:write(RouteRecord)
 	end).
+
+%% @doc Returns the list of viable backends
+%%
+%% Returns the configured backends, and their IP addresses.
+%%
+%% @end
 
 get_backends() ->
 	maps:from_list([{Backend, list_to_binary(IP)} ||{Backend, IP} <- application:get_env(dnsplice, backends, [])]).

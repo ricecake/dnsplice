@@ -1,3 +1,10 @@
+%%@doc DNSplice request listener
+%%
+%% This module is responsible for handling incoming DNS requests,
+%% handing them off to a worker, and routing the replys back to
+%% the client.
+%%
+%%@end
 -module(dnsplice_listener).
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
@@ -28,8 +35,22 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
+%%@doc starts the listener process
+%%
+%% function that starts the listener process.  Should be called by the
+%% dnsplice top level supervison.
+%%
+%%@end
+
 start_link() ->
 	gen_server:start_link({local, ?SERVER}, ?MODULE, #{}, []).
+
+%%@doc sends a reply back to the client
+%%
+%% Handles routing a reply back from the workers to the requesting
+%% client.
+%%
+%%@end
 
 send_reply(Packet, {IP, Port}) ->
 	gen_server:cast(?SERVER, {reply, IP, Port, Packet}).

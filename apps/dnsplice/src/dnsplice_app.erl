@@ -1,5 +1,8 @@
 %%%-------------------------------------------------------------------
 %% @doc dnsplice public API
+%%
+%% Application callbacks required to start the dnsplice app
+%%
 %% @end
 %%%-------------------------------------------------------------------
 
@@ -8,8 +11,14 @@
 -behaviour(application).
 -include_lib("dnsplice/src/records.hrl").
 
-%% Application callbacks
--export([start/2, stop/1]).
+%% ------------------------------------------------------------------
+%% API Function Exports
+%% ------------------------------------------------------------------
+
+-export([
+	start/2,
+	stop/1
+]).
 
 %%====================================================================
 %% API
@@ -22,7 +31,6 @@ start(_StartType, _StartArgs) ->
 	ok = setup_mnesia(),
 	dnsplice_sup:start_link().
 
-%%--------------------------------------------------------------------
 stop(_State) ->
 	ok.
 
