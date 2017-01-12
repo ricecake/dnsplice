@@ -22,6 +22,11 @@
 -define(record_to_list(Rec, Ref), lists:zip(record_info(fields, Rec),tl(tuple_to_list(Ref)))).
 -define(record_to_map(Rec, Ref), maps:from_list(?record_to_list(Rec, Ref))).
 
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-endif.
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -103,8 +108,29 @@ build_subdomains(Domain) when is_binary(Domain)->
 	do_subdomain_build(lists:reverse(Labels), []).
 
 
+do_subdomain_build([<<>>], Acc) -> Acc;
 do_subdomain_build([], Acc) -> Acc;
 do_subdomain_build([Chunk |Rest], []) ->
 	do_subdomain_build(Rest, [Chunk]);
 do_subdomain_build([Chunk |Rest], [Last |_] = Acc) ->
 	do_subdomain_build(Rest, [<<Chunk/binary, $., Last/binary>> |Acc]).
+
+-ifdef(TEST).
+
+basic_test_() ->
+	{"DNSplice API Tests", [
+		{"can build subdomain list", [
+			{"with binary inputs", [
+				{"Empty binary works", ?_assertMatch([], build_subdomains(<<"">>))},
+				{"Single level binary works", ?_assertMatch([<<"com">>], build_subdomains(<<"com">>))},
+				{"multi-level binary works", ?_assertMatch([<<"test.com">>, <<"com">>], build_subdomains(<<"test.com">>))}
+			]},
+			{"with list inputs", [
+				{"Empty list works", ?_assertMatch([], build_subdomains(""))},
+				{"Single level list works", ?_assertMatch([<<"com">>], build_subdomains("com"))},
+				{"multi-level list works", ?_assertMatch([<<"test.com">>, <<"com">>], build_subdomains("test.com"))}
+			]}
+		]}
+	]}.
+
+-endif.
