@@ -40,6 +40,12 @@
 -define(record_to_list(Rec, Ref), lists:zip(record_info(fields, Rec),tl(tuple_to_list(Ref)))).
 -define(record_to_map(Rec, Ref), maps:from_list(?record_to_list(Rec, Ref))).
 
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-endif.
+
 %% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
@@ -227,3 +233,29 @@ to_lower(String) when is_binary(String) ->
 
 do_lower(Char) when Char >= 65 andalso Char =< 90 -> Char + 32;
 do_lower(Char) -> Char.
+
+-ifdef(TEST).
+
+basic_test_() ->
+	{"DNSplice worker Tests", [
+		{"Utility functions", [
+			{"lowercase helper", [
+				{"works on binary", ?_assertMatch(<<"az!1az">>, to_lower(<<"AZ!1az">>))},
+				{"works on list", ?_assertMatch("az!1az", to_lower("AZ!1az"))}
+			]},
+			{"item comparison", [
+				{"values differ", [
+					{"First key greater", ?_assertMatch({{1, a},{2, b},false}, compare_items({2, b},{1, a}))},
+					{"second key greater", ?_assertMatch({{1, a},{2, b},false}, compare_items({1, a},{2, b}))},
+					{"keys equal", ?_assertMatch({{test, b},{test, a},false}, compare_items({test, b},{test, a}))}
+				]},
+				{"values match", [
+					{"First key greater", ?_assertMatch({{1, b},{2, b},true}, compare_items({2, b},{1, b}))},
+					{"second key greater", ?_assertMatch({{1, a},{2, a},true}, compare_items({1, a},{2, a}))},
+					{"keys equal", ?_assertMatch({{test, b},{test, b},true}, compare_items({test, b},{test, b}))}
+				]}
+			]}
+		]}
+	]}.
+
+-endif.
