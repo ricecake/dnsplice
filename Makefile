@@ -1,6 +1,6 @@
 REBAR := `pwd`/rebar3
 
-all: test release
+all: test doc release
 
 compile:
 	@$(REBAR) compile
