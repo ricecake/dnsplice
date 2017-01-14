@@ -263,6 +263,37 @@ basic_test_() ->
 					{"second key greater", ?_assertMatch({{1, a},{2, a},true}, compare_items({1, a},{2, a}))},
 					{"keys equal", ?_assertMatch({{test, b},{test, b},true}, compare_items({test, b},{test, b}))}
 				]}
+			]},
+			{"set comparison", [
+				{"empty list", ?_assertMatch([], pairwise_diff([]))},
+				{"no differences", ?_assertMatch([
+					{{a,1},{b,1},true},
+					{{a,1},{c,1},true},
+					{{a,1},{d,1},true},
+					{{b,1},{c,1},true},
+					{{b,1},{d,1},true},
+					{{c,1},{d,1},true}], pairwise_diff([{a, 1},{b, 1},{c, 1},{d, 1}]))},
+				{"some differences", ?_assertMatch([
+					{{a,1},{b,2},false},
+					{{a,1},{c,1},true},
+					{{a,1},{d,2},false},
+					{{b,2},{c,1},false},
+					{{b,2},{d,2},true},
+					{{c,1},{d,2},false}], pairwise_diff([{a, 1},{b, 2},{c, 1},{d, 2}]))},
+				{"all different", ?_assertMatch([
+					{{a,1},{b,2},false},
+					{{a,1},{c,3},false},
+					{{a,1},{d,4},false},
+					{{b,2},{c,3},false},
+					{{b,2},{d,4},false},
+					{{c,3},{d,4},false}], pairwise_diff([{a, 1},{b, 2},{c, 3},{d, 4}]))},
+				{"duplicate items", ?_assertMatch([
+					{{a,1},{a,1},true},
+					{{a,1},{b,2},false},
+					{{a,1},{b,2},false},
+					{{a,1},{b,3},false},
+					{{a,1},{b,3},false},
+					{{b,2},{b,3},false}], pairwise_diff([{a, 1},{a, 1},{b, 2},{b, 3}]))}
 			]}
 		]}
 	]}.
