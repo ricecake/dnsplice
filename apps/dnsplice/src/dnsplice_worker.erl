@@ -172,7 +172,14 @@ diff_analyze(List) ->
 	end, #{}, DiffList),
 	{ok, [ {lists:usort(Holders), normalize_dns_record(Val)} || {Val, Holders} <- maps:to_list(Vals) ]}.
 
+-type comparison_item() :: {Name :: any(), Value :: any()}.
+-type comparison_item(_A) :: comparison_item().
+-type comparison_result() :: {A :: comparison_item(), B :: comparison_item(), Result :: boolean()}.
+-type comparison_result(A, B) :: {comparison_item(A), comparison_item(B), Result :: boolean()}.
 
+-spec pairwise_diff(Items :: []|list(comparison_item())) -> list(comparison_result()).
+
+pairwise_diff([]) -> [];
 pairwise_diff(List) when is_list(List) ->
 	do_pairwise_diff(List, []).
 
@@ -181,6 +188,8 @@ do_pairwise_diff([_], Acc) ->
 do_pairwise_diff([This |Rest], Acc) ->
 	Comparisons = [compare_items(This, Other) || Other <- Rest],
 	do_pairwise_diff(Rest, [Comparisons |Acc]).
+
+-spec compare_items(comparison_item(A), comparison_item(B)) -> comparison_result(A, B).
 
 compare_items({AName, AVal} = A, {BName, BVal} = B) when AName < BName -> {A, B, AVal =:= BVal};
 compare_items({AName, AVal} = A, {BName, BVal} = B) when AName > BName -> {B, A, AVal =:= BVal};
