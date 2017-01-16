@@ -30,8 +30,6 @@ init_per_suite(Config) ->
 	stop_system(),
 	reset_configs(),
 	start_system(),
-	timer:sleep(1000),
-	io:format("~p~n", [Config]),
 	Config.
 
 end_per_suite(_Config) ->
