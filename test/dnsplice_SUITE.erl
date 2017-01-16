@@ -28,8 +28,10 @@ groups() -> [
 
 init_per_suite(Config) ->
 	stop_system(),
+	reset_configs(),
 	start_system(),
 	timer:sleep(1000),
+	io:format("~p~n", [Config]),
 	Config.
 
 end_per_suite(_Config) ->
@@ -58,8 +60,16 @@ test_dnsplice_boot(_Config) ->
 %%%===================================================================
 
 start_system() ->
-	{ok, _} = dnsplice:start().
+	{ok, _} = dnsplice:start(),
+	{ok, _} = dnsplice_web:start(),
+	ok.
 
 stop_system() ->
-	_ = dnsplice:stop().
+	_ = dnsplice:stop(),
+	_ = dnsplice_web:stop(),
+	ok.
 
+reset_configs() ->
+	application:set_env(dnsplice, listen_port, 15353),
+	application:set_env(dnsplice_web, port, 18080),
+	ok.

@@ -9,7 +9,7 @@ doc:
 	@$(REBAR) edoc
 
 test:
-	@$(REBAR) do xref, dialyzer, eunit, cover
+	@$(REBAR) do xref, dialyzer, eunit, ct, cover
 
 release:
 	@$(REBAR) release

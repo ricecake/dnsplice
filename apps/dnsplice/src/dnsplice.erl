@@ -10,6 +10,8 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 -export([
+	start/0,
+	stop/0,
 	get_domain_route/1,
 	set_domain_route/2,
 	get_backends/0
@@ -31,6 +33,26 @@
 %% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
+
+%% @doc
+%%
+%% starts dnsplice
+%%
+%% @end
+
+-spec start() -> {ok, Started :: list()}.
+
+start() -> application:ensure_all_started(dnsplice).
+
+%% @doc
+%%
+%% stops dnsplice
+%%
+%% @end
+
+-spec stop() -> ok.
+
+stop() -> application:stop(dnsplice).
 
 %% @doc Returns domain routing information
 %%
