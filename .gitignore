@@ -20,3 +20,5 @@ rel/example_project
 *.swo
 *.swp
 _tdeps
+Mnesia.*
+doc
