@@ -209,10 +209,6 @@ expand_dns_rec_field({arlist, OPTs}) ->
 	{arlist, RRs ++ RROpts};
 expand_dns_rec_field({Section, RRs}) -> {Section, [ clean_rr(?record_to_map(dns_rr, RR)) || RR <- RRs]}.
 
-clean_rr(#{ type := a, data := Data } = RR) ->
-	all_rr_cleanup(RR#{ data := list_to_binary(inet_parse:ntoa(Data)) });
-clean_rr(#{ type := aaaa, data := Data } = RR) ->
-	all_rr_cleanup(RR#{ data := list_to_binary(inet_parse:ntoa(Data)) });
 clean_rr(#{ type := mx, data := {Prio, Exchange} } = RR) ->
 	all_rr_cleanup(RR#{ data := #{
 		priority => Prio,
@@ -228,6 +224,8 @@ clean_rr(#{ type := soa,  data := {MName,RName,Serial,Refresh,Retry,Expiry,Minim
 		expiry  => Expiry,
 		minimum => Minimum
 	} });
+clean_rr(#{ type := Type, data := Data } = RR) when Type == a orelse Type == aaaa ->
+	all_rr_cleanup(RR#{ data := list_to_binary(inet_parse:ntoa(Data)) });
 clean_rr(#{ data := Data } = RR) when is_list(Data)  -> all_rr_cleanup(RR#{ data := list_to_binary(Data) });
 clean_rr(#{ data := Data } = RR) when is_tuple(Data) -> all_rr_cleanup(RR#{ data := tuple_to_list(Data) }).
 
