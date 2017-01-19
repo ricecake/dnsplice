@@ -72,12 +72,23 @@ test_dnsplice_basics(_Config) ->
 		Bad -> Bad
 	after 1000 -> ok
 	end,
+
 	ok = dnsplice:set_domain_route(<<"test-domain.com">>, #{ alerts => true }),
 	ok = gen_udp:send(Socket, {127,0,0,1}, 15353, produce_dns_request(#{ domain => "test-domain.com" })),
 	receive
 		Routed -> Routed
 	after 1000 -> ok
 	end,
+	[begin
+		gen_udp:send(Socket, {127,0,0,1}, 15353, produce_dns_request(#{
+			domain => "test-domain.com",
+			type => Type
+		})),
+		receive
+			TypeMsg -> TypeMsg
+		after 1000 -> ok
+		end
+	end || Type <- [a, mx, cname, aaaa, srv, txt, soa, ns]],
 	ok.
 
 %%%===================================================================
