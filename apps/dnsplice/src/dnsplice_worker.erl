@@ -97,12 +97,23 @@ handle_cast(setup_route, #{ packet := Packet } = State) ->
 	Sockets = maps:from_list([ forward_packet(Backend, Packet) || Backend <- Servers ]),
 	{Route, Alerts} = try
 		{ok, #dns_rec{ qdlist = [#dns_query{domain = Domain}] }} = inet_dns:decode(Packet),
-		dnsplice:get_domain_route(to_lower(Domain))
+		{FoundRoute, FoundAlert} = dnsplice:get_domain_route(to_lower(Domain)),
+		lager:md([
+			{domain, Domain},
+			{backend, FoundRoute},
+			{alerts, FoundAlert}
+		]),
+		{FoundRoute, FoundAlert}
 	catch
 		Type:Error ->
 			lager:error("Encountered ~w:~w finding route", [Type, Error]),
 			{ok, DefaultBackend} = application:get_env(default_backend),
 			{ok, DefaultAlerts} = application:get_env(default_alerts),
+			lager:md([
+				{domain, 'unparsable domain'},
+				{backend, DefaultBackend},
+				{alerts, DefaultAlerts}
+			]),
 			{DefaultBackend, DefaultAlerts}
 	end,
 	{noreply, State#{ route => Route, alerts => Alerts, sockets => Sockets }};
