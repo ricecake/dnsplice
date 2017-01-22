@@ -91,13 +91,17 @@ create_route_json(Req, State) ->
 		not HasBody -> {false, Req, State};
 		HasBody ->
 			{ok, Input, Req2} = cowboy_req:read_body(Req),
-			Args = maps:from_list([{binary_to_existing_atom(Field, utf8), Value} || {Field, Value} <- jsx:decode(Input)]),
+			Args = maps:from_list([ format_param(Param) || Param <- jsx:decode(Input)]),
 			ok = dnsplice:set_domain_route(State, Args),
 			{true, Req2, State}
 	end.
 
 create_route_form(Req, State) ->
 	{ok, Input, Req2} = cowboy_req:read_urlencoded_body(Req),
-	Args = maps:from_list([{binary_to_existing_atom(Field, utf8), Value} || {Field, Value} <- Input]),
+	Args = maps:from_list([ format_param(Param) || Param <- Input]),
 	ok = dnsplice:set_domain_route(State, Args#{ alerts => maps:is_key(alerts, Args) }),
 	{true, Req2, State}.
+
+
+format_param({<<"backend">>, Backend}) -> {backend, binary_to_existing_atom(Backend, utf8)};
+format_param({Key, Value}) -> {binary_to_existing_atom(Key, utf8), Value}.
