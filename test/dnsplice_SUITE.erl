@@ -108,10 +108,10 @@ stop_system() ->
 reset_configs() ->
 	application:set_env(dnsplice, listen_port, 15353),
 	application:set_env(dnsplice, backends, [
-		{<<"A">>, "8.8.8.8"},
-		{<<"B">>, "8.8.4.4"}
+		{'A', "8.8.8.8"},
+		{'B', "8.8.4.4"}
 	]),
-	application:set_env(dnsplice, default_backend, <<"A">>),
+	application:set_env(dnsplice, default_backend, 'A'),
 	application:set_env(dnsplice, default_alerts, true),
 	application:set_env(dnsplice_web, port, 18080),
 	ok.
