@@ -64,7 +64,7 @@ send_reply(Packet, {IP, Port}) ->
 init(Args) ->
 	Port = application:get_env(dnsplice, listen_port, 5300),
 	Opts = application:get_env(dnsplice, listen_opts, []),
-	{ok, Socket} = gen_udp:open(Port, [binary, {active, once} |Opts]),
+	{ok, Socket} = gen_udp:open(Port, [binary, {active, 100}, {read_packets, 1000}, {recbuf, 1024*1024} |Opts]),
 	{ok, Args#{ socket => Socket }}.
 
 handle_call(_Request, _From, State) ->
@@ -83,7 +83,7 @@ handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) 
                 Type:Error ->
                         lager:error("Encountered ~w:~w while routing", [Type, Error])
 	end,
-	ok = inet:setopts(Socket, [{active, once}]),
+	ok = inet:setopts(Socket, [{active, 1}]),
 	{noreply, State}.
 
 terminate(_Reason, _State) ->
