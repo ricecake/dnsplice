@@ -173,7 +173,7 @@ forward_packet({Label, Address}, Packet) ->
 	{Socket, Label}.
 
 diff_analyze(List) ->
-	DiffList = pairwise_diff(List),
+	DiffList = pairwise_diff([{Name, remove_rr_extras(normalize_dns_record(Data))} || {Name, Data} <- List]),
 	Vals = lists:foldl(fun
 		({_, _, true},  Acc)-> Acc;
 		({{AName, AVal}, {BName, BVal}, false}, Acc)->
@@ -181,7 +181,7 @@ diff_analyze(List) ->
 			BHolders = maps:get(BVal, Acc, []),
 			Acc#{ AVal => [AName |AHolders], BVal => [BName |BHolders]}
 	end, #{}, DiffList),
-	{ok, [ {lists:usort(Holders), normalize_dns_record(Val)} || {Val, Holders} <- maps:to_list(Vals) ]}.
+	{ok, [ {lists:usort(Holders), Val} || {Val, Holders} <- maps:to_list(Vals) ]}.
 
 -type comparison_item() :: {Name :: any(), Value :: any()}.
 -type comparison_item(_A) :: comparison_item().
