@@ -173,7 +173,7 @@ forward_packet({Label, Address}, Packet) ->
 	{Socket, Label}.
 
 diff_analyze(List) ->
-	DiffList = pairwise_diff([{Name, remove_rr_extras(normalize_dns_record(Data))} || {Name, Data} <- List]),
+	DiffList = pairwise_diff([{Name, reduce_record(Data))} || {Name, Data} <- List]),
 	Vals = lists:foldl(fun
 		({_, _, true},  Acc)-> Acc;
 		({{AName, AVal}, {BName, BVal}, false}, Acc)->
@@ -251,6 +251,10 @@ to_lower(String) when is_binary(String) ->
 
 do_lower(Char) when Char >= 65 andalso Char =< 90 -> Char + 32;
 do_lower(Char) -> Char.
+
+reduce_record(Data) ->
+	NormalizedRecord = normalize_dns_record(Data),
+	remove_rr_extras(NormalizedRecord).
 
 remove_rr_extras(Packet)->Packet.
 
