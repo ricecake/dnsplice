@@ -86,7 +86,7 @@ handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) 
 	ok = inet:setopts(Socket, [{active, 1}]),
 	{noreply, State};
 handle_info(_, State) ->
-	{noreply, State).
+	{noreply, State}.
 
 terminate(_Reason, _State) ->
 	ok.
