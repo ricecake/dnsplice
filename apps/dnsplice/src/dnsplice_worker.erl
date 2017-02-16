@@ -173,7 +173,7 @@ forward_packet({Label, Address}, Packet) ->
 	{Socket, Label}.
 
 diff_analyze(List) ->
-	DiffList = pairwise_diff([{Name, reduce_record(Data))} || {Name, Data} <- List]),
+	DiffList = pairwise_diff([{Name, reduce_record(Data)} || {Name, Data} <- List]),
 	Vals = lists:foldl(fun
 		({_, _, true},  Acc)-> Acc;
 		({{AName, AVal}, {BName, BVal}, false}, Acc)->
