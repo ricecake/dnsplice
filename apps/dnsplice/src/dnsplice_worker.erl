@@ -212,7 +212,7 @@ normalize_dns_record(Packet) when is_binary(Packet) ->
 normalize_dns_record(#dns_rec{} = Record) ->
 	maps:from_list([ expand_dns_rec_field(Field) || Field <- ?record_to_list(dns_rec, Record)]).
 
-expand_dns_rec_field({header, Header}) -> {header, ?record_to_map(dns_header, Header)};
+expand_dns_rec_field({header, Header}) -> {header, expand_rcode(?record_to_map(dns_header, Header))};
 expand_dns_rec_field({qdlist, QDs}) -> {qdlist, [ all_rr_cleanup(?record_to_map(dns_query, Q)) || Q <- QDs]};
 expand_dns_rec_field({arlist, OPTs}) ->
 	RRs    = [clean_rr(?record_to_map(dns_rr, RR)) || RR <- OPTs, dns_rr == element(1, RR) ],
@@ -245,6 +245,17 @@ all_rr_cleanup(#{ func := _ } = RR) -> all_rr_cleanup(maps:without([func], RR));
 all_rr_cleanup(#{ domain := Domain } = RR) when is_list(Domain) -> all_rr_cleanup(RR#{ domain := list_to_binary(Domain) });
 all_rr_cleanup(RR) -> RR.
 
+expand_rcode(#{ rcode := ?NOERROR  } = Header) -> Header#{ rcode := noerror  };
+expand_rcode(#{ rcode := ?FORMERR  } = Header) -> Header#{ rcode := formerr  };
+expand_rcode(#{ rcode := ?SERVFAIL } = Header) -> Header#{ rcode := servfail };
+expand_rcode(#{ rcode := ?NXDOMAIN } = Header) -> Header#{ rcode := nxdomain };
+expand_rcode(#{ rcode := ?NOTIMP   } = Header) -> Header#{ rcode := notimp   };
+expand_rcode(#{ rcode := ?REFUSED  } = Header) -> Header#{ rcode := refused  };
+expand_rcode(#{ rcode := ?NOCHANGE } = Header) -> Header#{ rcode := nochange };
+expand_rcode(#{ rcode := ?BADVERS  } = Header) -> Header#{ rcode := badvers  };
+expand_rcode(Header) -> Header.
+
+
 to_lower(String) when is_list(String) -> string:to_lower(String);
 to_lower(String) when is_binary(String) ->
 	<< <<(do_lower(Char)):8>> || <<Char:8>> <= String >>.
@@ -256,7 +267,11 @@ reduce_record(Data) ->
 	NormalizedRecord = normalize_dns_record(Data),
 	remove_rr_extras(NormalizedRecord).
 
-remove_rr_extras(Packet)->Packet.
+remove_rr_extras(#{ header := Header, qdlist := Queries, anlist := Answers }) ->
+	#{ id := Id, opcode := Op, rcode := Response } = Header,
+	FormatedQueries = lists:sort([ {Dom, Type} || #{domain := Dom, type := Type} <- Queries]),
+	FormatedAnswers = lists:sort([ {Dom, Type, Data, TTL} || #{domain := Dom, type := Type, data := Data, ttl := TTL} <- Answers]),
+	{Id, Op, Response, FormatedQueries, FormatedAnswers}.
 
 -ifdef(TEST).
 
