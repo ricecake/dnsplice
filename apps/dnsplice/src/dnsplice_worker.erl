@@ -270,7 +270,7 @@ reduce_record(Data) ->
 remove_rr_extras(#{ header := Header, qdlist := Queries, anlist := Answers }) ->
 	#{ id := Id, opcode := Op, rcode := Response } = Header,
 	FormatedQueries = lists:sort([ {Dom, Type} || #{domain := Dom, type := Type} <- Queries]),
-	FormatedAnswers = lists:sort([ {Dom, Type, Data, TTL} || #{domain := Dom, type := Type, data := Data, ttl := TTL} <- Answers]),
+	FormatedAnswers = lists:sort([ {Dom, Type, TTL, Data} || #{domain := Dom, type := Type, data := Data, ttl := TTL} <- Answers]),
 	{Id, Op, Response, FormatedQueries, FormatedAnswers}.
 
 -ifdef(TEST).
