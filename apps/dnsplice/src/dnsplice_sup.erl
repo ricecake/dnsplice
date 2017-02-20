@@ -31,7 +31,7 @@ start_link() ->
 
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-	{ok, {#{}, [
+	{ok, {#{ intensity => 5, period => 5 }, [
 		?CHILD(dnsplice_worker_sup, supervisor),
 		?CHILD(dnsplice_listener, worker)
 	]}}.
