@@ -85,6 +85,9 @@ handle_info({udp, Socket, IP, InPortNo, Packet}, #{ socket := Socket } = State) 
 	end,
 	ok = inet:setopts(Socket, [{active, 1}]),
 	{noreply, State};
+handle_info({udp_passive, _Socket}, State) ->
+	lager:warning("Socket Threshold Reached"),
+	{noreply, State};
 handle_info(_, State) ->
 	{noreply, State}.
 
