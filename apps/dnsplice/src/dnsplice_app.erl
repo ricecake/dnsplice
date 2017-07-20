@@ -29,6 +29,7 @@ start(_StartType, _StartArgs) ->
 		normalize_backend(Entry) || Entry <- application:get_env(dnsplice, backends, [])
 	]),
 	ok = setup_mnesia(),
+	ok = setup_tcp_listener(),
 	dnsplice_sup:start_link().
 
 stop(_State) ->
@@ -59,4 +60,9 @@ setup_mnesia() ->
 			[mnesia:add_table_copy(Table, node(), disc_copies) || Table <- SystemTables],
 			ok = mnesia:wait_for_tables([schema |SystemTables], 10000)
 	end,
+	ok.
+setup_tcp_listener() ->
+	Port = application:get_env(dnsplice, listen_port, 5300),
+	Opts = application:get_env(dnsplice, listen_opts, []),
+	{ok, _} = ranch:start_listener(dnsplice_dns, ranch_tcp, [{port, Port} |Opts], dnsplice_worker_tcp, []),
 	ok.
