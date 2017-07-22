@@ -125,7 +125,7 @@ handle_info({tcp, Socket, ReplyPacket}, #{ proxy_sockets := Sockets, req_socket 
         NewState = State#{ replies :=  NewReplies },
 	io:format("REP: ~p~n", [#{ state => NewState }]),
 	{noreply, NewState};
-handle_info({tcp_closed, Socket}, #{ req_socket := Socket } = State) ->
+handle_info({tcp_closed, Socket}, #{ req_socket := Socket, replies := #{} } = State) ->
 	io:format("Request Ended~n"),
 	{noreply, State};
 handle_info({tcp_closed, Socket}, #{ proxy_sockets := Backends } = State) ->
