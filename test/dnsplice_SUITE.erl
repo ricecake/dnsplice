@@ -121,7 +121,7 @@ produce_dns_request(Opts) when is_map(Opts)->
 	Type   = maps:get(type, Opts, a),
 	inet_dns:encode(#dns_rec{
 		header = #dns_header{
-			id = crypto:rand_uniform(1,16#FFFF),
+			id = rand:uniform(16#FFFF),
 			opcode = query,
 			rd = true
 		},
