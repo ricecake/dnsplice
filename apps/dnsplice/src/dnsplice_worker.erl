@@ -242,7 +242,7 @@ clean_rr(#{ data := Data } = RR) when is_tuple(Data) -> all_rr_cleanup(RR#{ data
 
 all_rr_cleanup(#{ bm := BitMap } = RR) when is_list(BitMap) -> all_rr_cleanup(RR#{ bm := list_to_binary(BitMap) });
 all_rr_cleanup(#{ func := _ } = RR) -> all_rr_cleanup(maps:without([func], RR));
-all_rr_cleanup(#{ domain := Domain } = RR) when is_list(Domain) -> all_rr_cleanup(RR#{ domain := list_to_binary(Domain) });
+all_rr_cleanup(#{ domain := Domain } = RR) when is_list(Domain) -> all_rr_cleanup(RR#{ domain := to_lower(list_to_binary(Domain)) });
 all_rr_cleanup(RR) -> RR.
 
 expand_rcode(#{ rcode := ?NOERROR  } = Header) -> Header#{ rcode := noerror  };
