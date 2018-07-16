@@ -44,7 +44,7 @@ cowboy_start() ->
 			{"/static/[...]",   cowboy_static,            {priv_dir, dnsplice_web, "static/"}}
 		]}
 	]),
-	cowboy:start_clear(dnsplice_web, 25, Options, #{ env => #{ dispatch => Dispatch }}).
+	cowboy:start_clear(dnsplice_web, Options, #{ env => #{ dispatch => Dispatch }}).
 
 determine_options() ->
 	WithIp = case application:get_env(dnsplice_web, ip) of
